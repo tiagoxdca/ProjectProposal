@@ -59,20 +59,25 @@ private struct RepoListScreen: View {
             }
 
         case .loaded(let loaded):
-            RepoListContentView(
-                repos: loaded.repos,
-                showFooterLoading: loaded.isLoadingMore,
-                onLoadMoreIfNeeded: onLoadMoreIfNeeded,
-                onLongPress: onLongPress
-            )
+            if loaded.repos.isEmpty {
+                RepoListEmptyView {
+                    Task { await onRefresh() }
+                }
+            } else {
+                RepoListContentView(
+                    repos: loaded.repos,
+                    showFooterLoading: loaded.isLoadingMore,
+                    onLoadMoreIfNeeded: onLoadMoreIfNeeded,
+                    onLongPress: onLongPress
+                )
+            }
         }
     }
 }
 
 private struct RepoListLoadingView: View {
     var body: some View {
-        ProgressView("Loading…")
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        RepoListSkeletonView()
     }
 }
 
@@ -120,3 +125,63 @@ private struct RepoListContentView: View {
         .background(Color(UIColor.systemGroupedBackground))
     }
 }
+
+
+// MARK: Previous
+
+//#Preview("Loading") {
+//    RepoListScreen(
+//        state: .loading,
+//        onRefresh: {},
+//        onLoadMoreIfNeeded: { _ in },
+//        onLongPress: { _ in }
+//    )
+//}
+//
+//#Preview("Empty") {
+//    RepoListScreen(
+//        state: .loaded(.init(repos: [], isLoadingMore: false)),
+//        onRefresh: {},
+//        onLoadMoreIfNeeded: { _ in },
+//        onLongPress: { _ in }
+//    )
+//}
+
+#Preview("Loaded") {
+    let samples: [Repo] = [
+        Repo(
+            id: 1,
+            name: "swift",
+            description: "The Swift Programming Language",
+            fork: false,
+            repoURL: URL(string: "https://github.com/apple/swift")!,
+            ownerLogin: "apple",
+            ownerURL: URL(string: "https://github.com/apple")!
+        ),
+        Repo(
+            id: 2,
+            name: "swift-nio",
+            description: "Event-driven network application framework for high performance",
+            fork: true,
+            repoURL: URL(string: "https://github.com/apple/swift-nio")!,
+            ownerLogin: "apple",
+            ownerURL: URL(string: "https://github.com/apple")!
+        )
+    ]
+
+    return RepoListScreen(
+        state: .loaded(.init(repos: samples, isLoadingMore: false)),
+        onRefresh: {},
+        onLoadMoreIfNeeded: { _ in },
+        onLongPress: { _ in }
+    )
+}
+
+//#Preview("Error") {
+//    RepoListScreen(
+//        state: .failed(message: "Network request failed."),
+//        onRefresh: {},
+//        onLoadMoreIfNeeded: { _ in },
+//        onLongPress: { _ in }
+//    )
+//}

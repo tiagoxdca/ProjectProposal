@@ -28,6 +28,7 @@ struct RepoRowView: View {
         }
         .padding(.vertical, 10)
         .padding(.horizontal, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .background(RepoRowStyle.backgroundColor(for: repo.fork))
         .clipShape(RoundedRectangle(cornerRadius: 12))
     }

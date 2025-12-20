@@ -40,7 +40,6 @@ public final actor RepoRepositoryImpl: RepoRepository {
         let (dtos, next) = try await service.fetchRepos(user: user, page: currentPage, perPage: perPage)
         let repos = RepoMapper.map(dtos)
 
-        try await cache.deleteAll()
         try await cache.upsert(repos)
 
         hasNext = next

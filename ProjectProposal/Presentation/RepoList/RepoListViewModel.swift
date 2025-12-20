@@ -24,12 +24,32 @@ final class RepoListViewModel {
     }
 
     func refresh() async {
-        await setState(.loading)
+        let hadContent: Bool
+        let currentRepos: [Repo]
+
+        switch state {
+        case .loaded(let loaded):
+            hadContent = true
+            currentRepos = loaded.repos
+        default:
+            hadContent = false
+            currentRepos = []
+        }
+
+        if !hadContent {
+            await setState(.loading)
+        }
+
         do {
             let fresh = try await useCases.refresh.execute()
             await setState(.loaded(.init(repos: fresh, isLoadingMore: false)))
         } catch {
-            await setState(.failed(message: error.localizedDescription))
+            if hadContent {
+                // Mantém conteúdo existente (não destrói UX)
+                await setState(.loaded(.init(repos: currentRepos, isLoadingMore: false)))
+            } else {
+                await setState(.failed(message: error.localizedDescription))
+            }
         }
     }
 
@@ -82,6 +102,7 @@ final class RepoListViewModel {
     }
 
     private func setState(_ newState: RepoListViewState) async {
+        guard state != newState else { return }
         state = newState
     }
 }

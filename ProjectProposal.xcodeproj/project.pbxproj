@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		224E68942EF6CA8D00EEFE5C /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 224E68932EF6CA8D00EEFE5C /* README.md */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		220103132EF6BE7F008E4409 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +31,7 @@
 		220103032EF6BE7C008E4409 /* ProjectProposal.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ProjectProposal.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		220103122EF6BE7F008E4409 /* ProjectProposalTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ProjectProposalTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2201031C2EF6BE7F008E4409 /* ProjectProposalUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ProjectProposalUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		224E68932EF6CA8D00EEFE5C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -75,6 +80,7 @@
 		220102FA2EF6BE7C008E4409 = {
 			isa = PBXGroup;
 			children = (
+				224E68932EF6CA8D00EEFE5C /* README.md */,
 				220103052EF6BE7C008E4409 /* ProjectProposal */,
 				220103152EF6BE7F008E4409 /* ProjectProposalTests */,
 				2201031F2EF6BE7F008E4409 /* ProjectProposalUITests */,
@@ -212,6 +218,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				224E68942EF6CA8D00EEFE5C /* README.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

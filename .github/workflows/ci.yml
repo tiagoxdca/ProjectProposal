@@ -1,0 +1,51 @@
+name: iOS CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main, master ]
+
+concurrency:
+  group: ios-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: macos-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Xcode version
+        run: xcodebuild -version
+
+      - name: List simulators (debug)
+        run: xcrun simctl list devices available
+
+      - name: Unit Tests (ProjectProposal-UnitTests)
+        env:
+          NSUnbufferedIO: "YES"
+        run: |
+          set -o pipefail
+          xcodebuild test \
+            -project ProjectProposal.xcodeproj \
+            -scheme "ProjectProposal-UnitTests" \
+            -destination "platform=iOS Simulator,name=iPhone 15,OS=latest" \
+            -resultBundlePath TestResults \
+            | tee xcodebuild.log
+
+      - name: Upload test results bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: TestResults
+          path: TestResults
+
+      - name: Upload xcodebuild log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild.log
+          path: xcodebuild.log

@@ -1,29 +1,29 @@
 name: iOS CI
 
 on:
-  push:
-    branches: [ main, master ]
   pull_request:
+  push:
+    branches:
+      - main
+      - master
 
 jobs:
-  build-and-test:
+  unit-tests:
     runs-on: macos-latest
+    timeout-minutes: 30
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Xcode version
         run: xcodebuild -version
 
-      - name: Debug runtimes
-        run: xcrun simctl list runtimes
-
-      - name: Debug devices
-        run: xcrun simctl list devices
-
-      - name: Unit tests
+      - name: Unit Tests
         run: |
+          set -o pipefail
           xcodebuild test \
             -project ProjectProposal.xcodeproj \
             -scheme "ProjectProposal-UnitTests" \
             -destination "generic/platform=iOS Simulator"
+

@@ -1,34 +1,27 @@
-name: iOS CI
+name: iOS Unit Tests
 
-"on":
-  pull_request:
+on:
   push:
-    branches:
-      - main
-      - master
+  pull_request:
 
 jobs:
-  unit-tests:
-    runs-on: macos-14
-    timeout-minutes: 30
-
+  tests:
+    runs-on: macos-15
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode.app
-
-      - name: Xcode version
-        run: xcodebuild -version
-
-      - name: Show destinations (debug)
-        run: xcodebuild -showdestinations -project ProjectProposal.xcodeproj -scheme "ProjectProposal-UnitTests"
-
-      - name: Unit Tests
         run: |
-          set -o pipefail
+          XCODE_APP=$(ls -d /Applications/Xcode*.app | sort -V | tail -n 1)
+          sudo xcode-select -s "$XCODE_APP/Contents/Developer"
+          xcodebuild -version
+
+      - name: Run tests (iOS Simulator)
+        run: |
+          set -euo pipefail
+          UDID=$(xcrun simctl list devices available | awk -F '[()]' '/iPhone/ {print $2; exit}')
           xcodebuild test \
             -project ProjectProposal.xcodeproj \
             -scheme "ProjectProposal-UnitTests" \
-            -destination "platform=iOS Simulator,name=Any iOS Simulator Device"
+            -sdk iphonesimulator \
+            -destination "id=$UDID"

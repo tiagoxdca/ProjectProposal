@@ -1,5 +1,7 @@
 # 📱 ProjectProposal — GitHub Repositories Explorer
 
+[![iOS Unit Tests](https://github.com/tiagoxdca/ProjectProposal/actions/workflows/ci.yml/badge.svg)](https://github.com/tiagoxdca/ProjectProposal/actions/workflows/ci.yml)
+
 An iOS application built as a **showcase of architecture, code quality, and best practices**, developed as part of the **Basecone iOS Coding Challenge**.
 
 The app fetches and displays Apple’s public GitHub repositories, supporting pagination, caching, and a polished user experience.
@@ -25,11 +27,23 @@ The app fetches and displays Apple’s public GitHub repositories, supporting pa
 
 The project follows a **Clean Architecture–inspired approach**, with clear separation of concerns:
 
+
+```text
 App
-├── Composition Root
-├── Presentation (SwiftUI + ViewModel)
-├── Domain (Entities + Use Cases)
-└── Data (API, Repository, Cache)
+├─ Composition Root
+│
+├─ Presentation
+│   └─ SwiftUI Views + ViewModels
+│
+├─ Domain
+│   ├─ Entities
+│   └─ Use Cases
+│
+└─ Data
+    ├─ API
+    ├─ Repository
+    └─ Cache (SwiftData)
+```
 
 
 ### Key principles applied

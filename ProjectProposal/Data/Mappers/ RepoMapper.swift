@@ -15,31 +15,29 @@ public enum RepoMapper {
             isValidHTTPURL(repoURL),
             isValidHTTPURL(ownerURL)
         else { return nil }
-
-        return Repo(
-            id: dto.id,
-            name: dto.name,
-            description: dto.description,
-            fork: dto.fork,
-            repoURL: repoURL,
-            ownerLogin: dto.owner.login,
-            ownerURL: ownerURL
-        )
+        
+        return Repo(id: dto.id,
+                    name: dto.name,
+                    description: dto.description,
+                    fork: dto.fork,
+                    repoURL: repoURL,
+                    ownerLogin: dto.owner.login,
+                    ownerURL: ownerURL)
     }
-
+    
     public static func map(_ dtos: [RepoDTO]) -> [Repo] {
         dtos.compactMap(map)
     }
-
+    
     // MARK: - Validation
-
+    
     private static func isValidHTTPURL(_ url: URL) -> Bool {
         guard
             let scheme = url.scheme?.lowercased(),
             (scheme == "http" || scheme == "https"),
             url.host != nil
         else { return false }
-
+        
         return true
     }
 }

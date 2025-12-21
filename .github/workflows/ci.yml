@@ -1,56 +1,29 @@
 name: iOS CI
 
 on:
-  pull_request:
   push:
-    branches:
-      - main
-      - master
-
-concurrency:
-  group: ios-ci-${{ github.ref }}
-  cancel-in-progress: true
+    branches: [ main, master ]
+  pull_request:
 
 jobs:
   build-and-test:
     runs-on: macos-latest
-    timeout-minutes: 30
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Xcode version
         run: xcodebuild -version
 
-      - name: Debug: list runtimes
+      - name: Debug runtimes
         run: xcrun simctl list runtimes
 
-      - name: Debug: list devices
+      - name: Debug devices
         run: xcrun simctl list devices
 
-      - name: Unit Tests (ProjectProposal-UnitTests)
-        env:
-          NSUnbufferedIO: "YES"
+      - name: Unit tests
         run: |
-          set -o pipefail
           xcodebuild test \
             -project ProjectProposal.xcodeproj \
             -scheme "ProjectProposal-UnitTests" \
-            -destination "generic/platform=iOS Simulator" \
-            -resultBundlePath TestResults \
-            | tee xcodebuild.log
-
-      - name: Upload test results bundle
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: TestResults
-          path: TestResults
-
-      - name: Upload xcodebuild log
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: xcodebuild.log
-          path: xcodebuild.log
+            -destination "generic/platform=iOS Simulator"

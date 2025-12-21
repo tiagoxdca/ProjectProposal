@@ -3,7 +3,9 @@ name: iOS CI
 on:
   pull_request:
   push:
-    branches: [ main, master ]
+    branches:
+      - main
+      - master
 
 concurrency:
   group: ios-ci-${{ github.ref }}
@@ -21,14 +23,12 @@ jobs:
       - name: Xcode version
         run: xcodebuild -version
 
-      - name: List simulators (debug)
-        run: xcrun simctl list devices available
-        
-      - name: Debug: list runtimes and devices
-        run: |
-          xcrun simctl list runtimes
-          xcrun simctl list devices
-          
+      - name: Debug: list runtimes
+        run: xcrun simctl list runtimes
+
+      - name: Debug: list devices
+        run: xcrun simctl list devices
+
       - name: Unit Tests (ProjectProposal-UnitTests)
         env:
           NSUnbufferedIO: "YES"

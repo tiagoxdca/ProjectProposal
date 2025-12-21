@@ -22,8 +22,14 @@ jobs:
       - name: Unit Tests
         run: |
           set -o pipefail
+
+          DEVICE_UDID=$(xcrun simctl list devices available | \
+            grep -m 1 -E "iPhone" | \
+            sed -E 's/.*\(([0-9A-F-]+)\).*/\1/')
+
+          echo "Using simulator UDID: $DEVICE_UDID"
+
           xcodebuild test \
             -project ProjectProposal.xcodeproj \
             -scheme "ProjectProposal-UnitTests" \
-            -destination "generic/platform=iOS Simulator"
-
+            -destination "id=$DEVICE_UDID"

@@ -11,14 +11,14 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		220103132EF6BE7F008E4409 /* PBXContainerItemProxy */ = {
+		2201031D2EF6BE7F008E4409 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 220102FB2EF6BE7C008E4409 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 220103022EF6BE7C008E4409;
 			remoteInfo = ProjectProposal;
 		};
-		2201031D2EF6BE7F008E4409 /* PBXContainerItemProxy */ = {
+		2261DBB42EF7FDC800DEDBDE /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 220102FB2EF6BE7C008E4409 /* Project object */;
 			proxyType = 1;
@@ -32,6 +32,7 @@
 		220103122EF6BE7F008E4409 /* ProjectProposalTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ProjectProposalTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2201031C2EF6BE7F008E4409 /* ProjectProposalUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ProjectProposalUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		224E68932EF6CA8D00EEFE5C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		2261DB442EF7F18200DEDBDE /* ProjectProposal-UnitTests.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "ProjectProposal-UnitTests.xctestplan"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -80,6 +81,7 @@
 		220102FA2EF6BE7C008E4409 = {
 			isa = PBXGroup;
 			children = (
+				2261DB442EF7F18200DEDBDE /* ProjectProposal-UnitTests.xctestplan */,
 				224E68932EF6CA8D00EEFE5C /* README.md */,
 				220103052EF6BE7C008E4409 /* ProjectProposal */,
 				220103152EF6BE7F008E4409 /* ProjectProposalTests */,
@@ -134,7 +136,7 @@
 			buildRules = (
 			);
 			dependencies = (
-				220103142EF6BE7F008E4409 /* PBXTargetDependency */,
+				2261DBB52EF7FDC800DEDBDE /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				220103152EF6BE7F008E4409 /* ProjectProposalTests */,
@@ -263,15 +265,15 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		220103142EF6BE7F008E4409 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 220103022EF6BE7C008E4409 /* ProjectProposal */;
-			targetProxy = 220103132EF6BE7F008E4409 /* PBXContainerItemProxy */;
-		};
 		2201031E2EF6BE7F008E4409 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 220103022EF6BE7C008E4409 /* ProjectProposal */;
 			targetProxy = 2201031D2EF6BE7F008E4409 /* PBXContainerItemProxy */;
+		};
+		2261DBB52EF7FDC800DEDBDE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 220103022EF6BE7C008E4409 /* ProjectProposal */;
+			targetProxy = 2261DBB42EF7FDC800DEDBDE /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 

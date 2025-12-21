@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		224E68942EF6CA8D00EEFE5C /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 224E68932EF6CA8D00EEFE5C /* README.md */; };
+		2261DBD82EF81B9500DEDBDE /* notes.md in Resources */ = {isa = PBXBuildFile; fileRef = 2261DBD72EF81B9500DEDBDE /* notes.md */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -33,6 +34,7 @@
 		2201031C2EF6BE7F008E4409 /* ProjectProposalUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ProjectProposalUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		224E68932EF6CA8D00EEFE5C /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		2261DB442EF7F18200DEDBDE /* ProjectProposal-UnitTests.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = "ProjectProposal-UnitTests.xctestplan"; sourceTree = "<group>"; };
+		2261DBD72EF81B9500DEDBDE /* notes.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = notes.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -81,6 +83,7 @@
 		220102FA2EF6BE7C008E4409 = {
 			isa = PBXGroup;
 			children = (
+				2261DBD72EF81B9500DEDBDE /* notes.md */,
 				2261DB442EF7F18200DEDBDE /* ProjectProposal-UnitTests.xctestplan */,
 				224E68932EF6CA8D00EEFE5C /* README.md */,
 				220103052EF6BE7C008E4409 /* ProjectProposal */,
@@ -220,6 +223,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				2261DBD82EF81B9500DEDBDE /* notes.md in Resources */,
 				224E68942EF6CA8D00EEFE5C /* README.md in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

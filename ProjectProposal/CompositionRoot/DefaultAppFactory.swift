@@ -15,7 +15,8 @@ final class DefaultAppFactory: AppFactory {
         self.container = container
     }
 
-    func makeRepoListView() -> RepoListView {
+    @MainActor
+    func makeRepoListView(router: AppRouter) -> RepoListView {
         // HTTP stack
         let httpClient = URLSessionHTTPClient()
 
@@ -51,6 +52,11 @@ final class DefaultAppFactory: AppFactory {
 
         // VM + View
         let viewModel = RepoListViewModel(useCases: useCases)
-        return RepoListView(viewModel: viewModel)
+        return RepoListView(viewModel: viewModel, router: router)
+    }
+    
+    @MainActor
+    func makeRepoListView() -> RepoListView {
+        makeRepoListView(router: AppRouter())
     }
 }

@@ -11,10 +11,13 @@ import SwiftData
 @main
 struct ProjectProposalApp: App {
     private let root = AppCompositionRoot()
+    @State private var router = AppRouter()
 
     var body: some Scene {
         WindowGroup {
-            root.factory.makeRepoListView()
+            NavigationStack(path: $router.path) {
+                root.factory.makeRepoListView(router: router)
+            }
         }
         .modelContainer(root.container)
     }

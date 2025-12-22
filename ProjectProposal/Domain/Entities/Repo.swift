@@ -7,7 +7,7 @@
 
 import Foundation
 
-public struct Repo: Identifiable, Equatable, Sendable {
+public struct Repo: Identifiable, Equatable, Sendable, Hashable {
     public let id: Int
     public let name: String
     public let description: String?

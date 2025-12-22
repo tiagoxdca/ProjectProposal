@@ -14,28 +14,30 @@ struct RepoListView: View {
     @Environment(\.openURL) private var openURL
 
     let viewModel: RepoListViewModel
+    let router: AppRouter
 
     var body: some View {
-        NavigationStack {
-            RepoListScreen(
-                state: viewModel.state,
-                onRefresh: { await viewModel.refresh() },
-                onLoadMoreIfNeeded: { repo in viewModel.loadMoreIfNeeded(currentItem: repo) },
-                onLongPress: { repo in
-                    selectedRepo = repo
-                    showOpenDialog = true
-                }
-            )
-            .navigationTitle("Apple Repos")
-            .task { viewModel.onAppear() }
-            .refreshable { await viewModel.refresh() }
-            .confirmationDialog("Open in browser", isPresented: $showOpenDialog, titleVisibility: .visible) {
-                if let repo = selectedRepo {
-                    Button("Open repository") { openURL(repo.repoURL) }
-                    Button("Open owner") { openURL(repo.ownerURL) }
-                }
-                Button("Cancel", role: .cancel) {}
+        RepoListScreen(
+            state: viewModel.state,
+            onRefresh: { await viewModel.refresh() },
+            onLoadMoreIfNeeded: { repo in viewModel.loadMoreIfNeeded(currentItem: repo) },
+            onTap: { repo in
+                router.push(.repoDetails(repo))
+            },
+            onLongPress: { repo in
+                selectedRepo = repo
+                showOpenDialog = true
             }
+        )
+        .navigationTitle("Apple Repos")
+        .task { viewModel.onAppear() }
+        .refreshable { await viewModel.refresh() }
+        .confirmationDialog("Open in browser", isPresented: $showOpenDialog, titleVisibility: .visible) {
+            if let repo = selectedRepo {
+                Button("Open repository") { openURL(repo.repoURL) }
+                Button("Open owner") { openURL(repo.ownerURL) }
+            }
+            Button("Cancel", role: .cancel) {}
         }
     }
 }
@@ -46,6 +48,7 @@ private struct RepoListScreen: View {
     let state: RepoListViewState
     let onRefresh: @Sendable () async -> Void
     let onLoadMoreIfNeeded: (Repo) -> Void
+    let onTap: (Repo) -> Void
     let onLongPress: (Repo) -> Void
 
     var body: some View {
@@ -68,6 +71,7 @@ private struct RepoListScreen: View {
                     repos: loaded.repos,
                     showFooterLoading: loaded.isLoadingMore,
                     onLoadMoreIfNeeded: onLoadMoreIfNeeded,
+                    onTap: onTap,
                     onLongPress: onLongPress
                 )
             }
@@ -104,6 +108,7 @@ private struct RepoListContentView: View {
     let repos: [Repo]
     let showFooterLoading: Bool
     let onLoadMoreIfNeeded: (Repo) -> Void
+    let onTap: (Repo) -> Void
     let onLongPress: (Repo) -> Void
 
     var body: some View {
@@ -112,6 +117,7 @@ private struct RepoListContentView: View {
                 ForEach(repos) { repo in
                     RepoRowView(repo: repo)
                         .onAppear { onLoadMoreIfNeeded(repo) }
+                        .onTapGesture { onTap(repo) }
                         .onLongPressGesture { onLongPress(repo) }
                         .padding(.horizontal, 12)
                 }
@@ -168,11 +174,12 @@ private struct RepoListContentView: View {
             ownerURL: URL(string: "https://github.com/apple")!
         )
     ]
-
-    return RepoListScreen(
+    
+    RepoListScreen(
         state: .loaded(.init(repos: samples, isLoadingMore: false)),
         onRefresh: {},
         onLoadMoreIfNeeded: { _ in },
+        onTap: { _ in },
         onLongPress: { _ in }
     )
 }

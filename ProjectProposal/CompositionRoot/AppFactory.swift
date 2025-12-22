@@ -8,5 +8,6 @@
 import SwiftUI
 
 protocol AppFactory {
-    @MainActor func makeRepoListView() -> RepoListView
+    @MainActor
+    func makeRepoListView(router: AppRouter) -> RepoListView
 }

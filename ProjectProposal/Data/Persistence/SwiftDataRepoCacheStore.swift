@@ -31,6 +31,8 @@ public final class SwiftDataRepoCacheStore: RepoCacheStore {
         try await MainActor.run { try fetchAll() }
     }
 
+    // MARK: - Upsert
+
     @MainActor
     private func upsertSync(_ repos: [Repo]) throws {
         if repos.isEmpty { return }
@@ -52,7 +54,8 @@ public final class SwiftDataRepoCacheStore: RepoCacheStore {
                     fork: repo.fork,
                     repoURL: repo.repoURL.absoluteString,
                     ownerLogin: repo.ownerLogin,
-                    ownerURL: repo.ownerURL.absoluteString
+                    ownerURL: repo.ownerURL.absoluteString,
+                    updatedAt: .now
                 )
                 context.insert(new)
                 byId[repo.id] = new
@@ -65,6 +68,39 @@ public final class SwiftDataRepoCacheStore: RepoCacheStore {
     public func upsert(_ repos: [Repo]) async throws {
         try await MainActor.run { try upsertSync(repos) }
     }
+
+    // MARK: - Replace All (atomic)
+
+    @MainActor
+    private func replaceAllSync(with repos: [Repo]) throws {
+        // Delete everything first to avoid stale items
+        try context.delete(model: CachedRepo.self)
+
+        if !repos.isEmpty {
+            // Insert fresh set
+            for repo in repos {
+                let new = CachedRepo(
+                    id: repo.id,
+                    name: repo.name,
+                    repoDescription: repo.description,
+                    fork: repo.fork,
+                    repoURL: repo.repoURL.absoluteString,
+                    ownerLogin: repo.ownerLogin,
+                    ownerURL: repo.ownerURL.absoluteString,
+                    updatedAt: .now
+                )
+                context.insert(new)
+            }
+        }
+
+        try context.save()
+    }
+
+    public func replaceAll(with repos: [Repo]) async throws {
+        try await MainActor.run { try replaceAllSync(with: repos) }
+    }
+
+    // MARK: - Delete All
 
     @MainActor
     private func deleteAllSync() throws {

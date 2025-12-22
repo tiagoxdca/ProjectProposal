@@ -8,7 +8,7 @@
 import Foundation
 
 public protocol RefreshReposUseCase: Sendable {
-    func execute() async throws -> [Repo]
+    func execute() async throws -> RepoPage
 }
 
 public struct DefaultRefreshReposUseCase: RefreshReposUseCase {
@@ -18,7 +18,7 @@ public struct DefaultRefreshReposUseCase: RefreshReposUseCase {
         self.repository = repository
     }
 
-    public func execute() async throws -> [Repo] {
+    public func execute() async throws -> RepoPage {
         try await repository.refresh()
     }
 }

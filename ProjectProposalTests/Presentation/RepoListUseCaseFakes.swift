@@ -10,8 +10,8 @@ import Foundation
 
 actor RepoListUseCasesFakeState {
     var cached: Result<[Repo], Error> = .success([])
-    var refresh: Result<[Repo], Error> = .success([])
-    var next: Result<[Repo], Error> = .success([])
+    var refresh: Result<RepoPage, Error> = .success(.init(repos: [], hasMore: true))
+    var next: Result<RepoPage, Error> = .success(.init(repos: [], hasMore: true))
 
     var cachedDelayNanos: UInt64 = 0
     var refreshDelayNanos: UInt64 = 0
@@ -26,12 +26,12 @@ actor RepoListUseCasesFakeState {
         cachedDelayNanos = delayNanos
     }
 
-    func setRefresh(_ value: Result<[Repo], Error>, delayNanos: UInt64 = 0) {
+    func setRefresh(_ value: Result<RepoPage, Error>, delayNanos: UInt64 = 0) {
         refresh = value
         refreshDelayNanos = delayNanos
     }
 
-    func setNext(_ value: Result<[Repo], Error>, delayNanos: UInt64 = 0) {
+    func setNext(_ value: Result<RepoPage, Error>, delayNanos: UInt64 = 0) {
         next = value
         nextDelayNanos = delayNanos
     }
@@ -46,13 +46,13 @@ actor RepoListUseCasesFakeState {
         return try cached.get()
     }
 
-    func runRefresh() async throws -> [Repo] {
+    func runRefresh() async throws -> RepoPage {
         refreshCalls += 1
         if refreshDelayNanos > 0 { try await Task.sleep(nanoseconds: refreshDelayNanos) }
         return try refresh.get()
     }
 
-    func runNext() async throws -> [Repo] {
+    func runNext() async throws -> RepoPage {
         nextCalls += 1
         if nextDelayNanos > 0 { try await Task.sleep(nanoseconds: nextDelayNanos) }
         return try next.get()
@@ -68,12 +68,12 @@ struct GetCachedReposUseCaseFake: GetCachedReposUseCase {
 
 struct RefreshReposUseCaseFake: RefreshReposUseCase {
     let state: RepoListUseCasesFakeState
-    func execute() async throws -> [Repo] { try await state.runRefresh() }
+    func execute() async throws -> RepoPage { try await state.runRefresh() }
 }
 
 struct LoadNextReposPageUseCaseFake: LoadNextReposPageUseCase {
     let state: RepoListUseCasesFakeState
-    func execute() async throws -> [Repo] { try await state.runNext() }
+    func execute() async throws -> RepoPage { try await state.runNext() }
 }
 
 // Convenience builder

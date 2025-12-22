@@ -8,7 +8,7 @@
 import Foundation
 
 public protocol LoadNextReposPageUseCase: Sendable {
-    func execute() async throws -> [Repo]
+    func execute() async throws -> RepoPage
 }
 
 public struct DefaultLoadNextReposPageUseCase: LoadNextReposPageUseCase {
@@ -18,7 +18,7 @@ public struct DefaultLoadNextReposPageUseCase: LoadNextReposPageUseCase {
         self.repository = repository
     }
 
-    public func execute() async throws -> [Repo] {
+    public func execute() async throws -> RepoPage {
         try await repository.loadNextPage()
     }
 }

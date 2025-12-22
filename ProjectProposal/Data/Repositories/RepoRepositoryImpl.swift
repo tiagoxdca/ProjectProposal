@@ -12,59 +12,93 @@ public final actor RepoRepositoryImpl: RepoRepository {
     private let cache: RepoCacheStore
     private let user: String
     private let perPage: Int
-
-    // Pagination state
+    
+    // Pagination state (repository responsibility)
     private var currentPage: Int = 1
     private var hasNext: Bool = true
     private var isLoading: Bool = false
-
+    
+    // In-memory accumulated list to preserve stable ordering
+    private var accumulated: [Repo] = []
+    
     public init(service: GitHubRepoServicing,
-        cache: RepoCacheStore,
-        user: String = "apple",
-        perPage: Int = 10) {
+                cache: RepoCacheStore,
+                user: String = "apple",
+                perPage: Int = 10) {
         self.service = service
         self.cache = cache
         self.user = user
         self.perPage = perPage
     }
-
+    
+    // MARK: - Cache
+    
     public func cachedRepos() async throws -> [Repo] {
-        try await cache.fetchAll()
+        let cached = try await cache.fetchAll()
+        // seed in-memory list once (preserve whatever order cache provides)
+        if accumulated.isEmpty {
+            accumulated = cached
+        }
+        return cached
     }
-
-    public func refresh() async throws -> [Repo] {
-        // Reset paging and replace cache with the first page
+    
+    // MARK: - Refresh
+    
+    public func refresh() async throws -> RepoPage {
         currentPage = 1
         hasNext = true
 
-        let (dtos, next) = try await service.fetchRepos(user: user, page: currentPage, perPage: perPage)
+        let (dtos, next) = try await service.fetchRepos(
+            user: user,
+            page: currentPage,
+            perPage: perPage
+        )
+
         let repos = RepoMapper.map(dtos)
 
         try await cache.upsert(repos)
 
+        // Replace in-memory list (stable order = API order)
+        accumulated = repos
+
         hasNext = next
-        currentPage = 2
+        currentPage = next ? 2 : 1
 
-        return repos
+        return RepoPage(repos: accumulated, hasMore: hasNext)
     }
-
-    public func loadNextPage() async throws -> [Repo] {
-        guard hasNext else { return try await cache.fetchAll() }
-        guard !isLoading else { return try await cache.fetchAll() }
-
+    
+    // MARK: - Pagination
+    
+    public func loadNextPage() async throws -> RepoPage {
+        guard hasNext else {
+            return RepoPage(repos: accumulated, hasMore: false)
+        }
+        
+        guard !isLoading else {
+            return RepoPage(repos: accumulated, hasMore: hasNext)
+        }
+        
         isLoading = true
         defer { isLoading = false }
-
-        let (dtos, next) = try await service.fetchRepos(user: user, page: currentPage, perPage: perPage)
-        let repos = RepoMapper.map(dtos)
-
-        // Append/update cache
-        try await cache.upsert(repos)
-
+        
+        let (dtos, next) = try await service.fetchRepos(user: user,
+                                                        page: currentPage,
+                                                        perPage: perPage)
+        let nextRepos = RepoMapper.map(dtos)
+        
+        // Persist (does not define ordering)
+        try await cache.upsert(nextRepos)
+        
+        // ✅ Append unique while preserving existing order
+        if !nextRepos.isEmpty {
+            let existingIDs = Set(accumulated.map(\.id))
+            let newOnes = nextRepos.filter { !existingIDs.contains($0.id) }
+            accumulated.append(contentsOf: newOnes)
+        }
+        
         hasNext = next
         if next { currentPage += 1 }
-
-        // Return full list from cache (single source of truth for UI)
-        return try await cache.fetchAll()
+        
+        return RepoPage(repos: accumulated, hasMore: hasNext)
     }
 }

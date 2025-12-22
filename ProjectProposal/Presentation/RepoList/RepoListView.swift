@@ -36,7 +36,9 @@ struct RepoListView: View {
             }
         )
         .navigationTitle("Apple Repos")
-        .task { await viewModel.onAppear() }
+        .task(id: router.path.count) {
+            await viewModel.onAppear()
+        }
         .refreshable { await viewModel.refresh() }
         .confirmationDialog("Open in browser", isPresented: $showOpenDialog, titleVisibility: .visible) {
             if let repo = selectedRepo {
@@ -57,25 +59,23 @@ private struct RepoListScreen: View {
     let onTap: (Repo) -> Void
     let onLongPress: (Repo) -> Void
     
-    var body: some View {
-        switch state {
-        case .idle, .loading:
-            RepoListLoadingView()
-            
-        case .failed(let message):
-            RepoListErrorView(message: message) {
-                Task { await onRefresh() }
-            }
-            
-        case .loaded(let loaded):
-            if loaded.repos.isEmpty {
+    @ViewBuilder var body: some View {
+        Group {
+            // Skeleton apenas quando não há conteúdo e estamos a fazer initial loading
+            if state.repos.isEmpty && state.phase == .loadingInitial {
+                RepoListLoadingView()
+                
+                // Empty apenas quando não há conteúdo e não estamos a fazer initial loading
+            } else if state.repos.isEmpty {
                 RepoListEmptyView {
                     Task { await onRefresh() }
                 }
+                
+                // Conteúdo
             } else {
                 RepoListContentView(
-                    repos: loaded.repos,
-                    showFooterLoading: loaded.isLoadingMore,
+                    repos: state.repos,
+                    showFooterLoading: state.phase == .loadingMore && state.hasMore,
                     onLoadMoreIfNeeded: onLoadMoreIfNeeded,
                     onTap: onTap,
                     onLongPress: onLongPress
@@ -122,6 +122,7 @@ private struct RepoListContentView: View {
             LazyVStack(spacing: 10) {
                 ForEach(repos) { repo in
                     RepoRowView(repo: repo)
+                        .contentShape(Rectangle())
                         .onAppear { onLoadMoreIfNeeded(repo) }
                         .onTapGesture { onTap(repo) }
                         .onLongPressGesture { onLongPress(repo) }
@@ -140,24 +141,6 @@ private struct RepoListContentView: View {
 
 
 // MARK: Previous
-
-//#Preview("Loading") {
-//    RepoListScreen(
-//        state: .loading,
-//        onRefresh: {},
-//        onLoadMoreIfNeeded: { _ in },
-//        onLongPress: { _ in }
-//    )
-//}
-//
-//#Preview("Empty") {
-//    RepoListScreen(
-//        state: .loaded(.init(repos: [], isLoadingMore: false)),
-//        onRefresh: {},
-//        onLoadMoreIfNeeded: { _ in },
-//        onLongPress: { _ in }
-//    )
-//}
 
 #Preview("Loaded") {
     let samples: [Repo] = [
@@ -180,9 +163,9 @@ private struct RepoListContentView: View {
             ownerURL: URL(string: "https://github.com/apple")!
         )
     ]
-    
-    RepoListScreen(
-        state: .loaded(.init(repos: samples, isLoadingMore: false)),
+
+    return RepoListScreen(
+        state: RepoListViewState(repos: samples, phase: .idle, hasMore: false),
         onRefresh: {},
         onLoadMoreIfNeeded: { _ in },
         onTap: { _ in },
@@ -190,11 +173,3 @@ private struct RepoListContentView: View {
     )
 }
 
-//#Preview("Error") {
-//    RepoListScreen(
-//        state: .failed(message: "Network request failed."),
-//        onRefresh: {},
-//        onLoadMoreIfNeeded: { _ in },
-//        onLongPress: { _ in }
-//    )
-//}

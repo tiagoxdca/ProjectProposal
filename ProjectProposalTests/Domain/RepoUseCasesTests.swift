@@ -31,13 +31,14 @@ struct RepoUseCasesTests {
     func refreshRepos_returnsRepositoryResult_andCallsOnce() async throws {
         let repo = makeRepo(id: 10)
         let repository = RepoRepositoryFake()
-        await repository.setRefreshResult(.success([repo]))
+        await repository.setRefreshResult(.success(.init(repos: [repo], hasMore: true)))
 
         let sut = DefaultRefreshReposUseCase(repository: repository)
 
         let result = try await sut.execute()
 
-        #expect(result == [repo])
+        #expect(result.repos == [repo])
+        #expect(result.hasMore == true)
         #expect(await repository.refreshCalls == 1)
         #expect(await repository.cachedCalls == 0)
         #expect(await repository.nextCalls == 0)
@@ -47,13 +48,14 @@ struct RepoUseCasesTests {
     func loadNextReposPage_returnsRepositoryResult_andCallsOnce() async throws {
         let repo = makeRepo(id: 20)
         let repository = RepoRepositoryFake()
-        await repository.setNextResult(.success([repo]))
+        await repository.setNextResult(.success(.init(repos: [repo], hasMore: true)))
 
         let sut = DefaultLoadNextReposPageUseCase(repository: repository)
 
         let result = try await sut.execute()
 
-        #expect(result == [repo])
+        #expect(result.repos == [repo])
+        #expect(result.hasMore == true)
         #expect(await repository.nextCalls == 1)
         #expect(await repository.cachedCalls == 0)
         #expect(await repository.refreshCalls == 0)

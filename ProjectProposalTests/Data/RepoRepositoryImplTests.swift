@@ -41,7 +41,7 @@ struct RepoRepositoryImplTests {
         
         let fresh = try await sut.refresh()
         
-        #expect(fresh.map(\.id) == [101, 102])
+        #expect(fresh.repos.map(\.id) == [101, 102])
         
         let cached = try await sut.cachedRepos()
         #expect(cached.map(\.id) == [101, 102])
@@ -69,7 +69,7 @@ struct RepoRepositoryImplTests {
         _ = try await sut.refresh()
         let updated = try await sut.loadNextPage()
         
-        #expect(updated.map(\.id) == [1, 2])
+        #expect(updated.repos.map(\.id) == [1, 2])
         
         let calls = await service.calls
         #expect(calls.map(\.page) == [1, 2])
@@ -115,6 +115,46 @@ struct RepoRepositoryImplTests {
         let cached = try await sut.cachedRepos()
         // Should at least contain the new repo; depending on your policy it may also keep older ones.
         #expect(cached.contains(where: { $0.id == 1 }))
+    }
+    
+    @Test
+    func refresh_replacesReturnedRepos_evenWhenCacheHasOldData_andDoesNotClearCache() async throws {
+        let service = GitHubRepoServiceStub()
+        let cache = RepoCacheStoreInMemory()
+
+        // Existing cached data (simulates UI currently displaying old content)
+        await cache.seed([makeRepo(id: 999)])
+
+        // Refresh returns a completely new dataset
+        await service.setPage(
+            1,
+            repos: [
+                makeDTO(id: 1, name: "A"),
+                makeDTO(id: 2, name: "B")
+            ],
+            hasNext: false
+        )
+
+        let sut = RepoRepositoryImpl(
+            service: service,
+            cache: cache,
+            user: "apple",
+            perPage: 10
+        )
+
+        let page = try await sut.refresh()
+
+        // The returned page must represent the new source of truth
+        #expect(page.repos.map(\.id) == [1, 2])
+        #expect(!page.repos.contains { $0.id == 999 })
+
+        // Important signal: refresh must not clear the cache to avoid empty-state flicker
+        #expect(await cache.deleteAllCalls == 0)
+
+        // New repos should be persisted in cache
+        let cached = try await sut.cachedRepos()
+        #expect(cached.contains { $0.id == 1 })
+        #expect(cached.contains { $0.id == 2 })
     }
 }
 

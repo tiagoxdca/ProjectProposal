@@ -13,96 +13,105 @@ import Observation
 final class RepoListViewModel {
     private let useCases: RepoListUseCases
 
-    private(set) var state: RepoListViewState = .idle
+    private(set) var state = RepoListViewState(repos: [], phase: .loadingInitial, hasMore: true)
+    private var hasAppeared = false
 
     init(useCases: RepoListUseCases) {
         self.useCases = useCases
     }
 
     func onAppear() async {
-        await loadCachedThenRefreshIfNeeded()
+        guard !hasAppeared else { return }
+        hasAppeared = true
+        await loadCachedThenRefresh()
     }
 
     func refresh() async {
-        let hadContent: Bool
-        let currentRepos: [Repo]
+        let hasContent = !state.repos.isEmpty
 
-        switch state {
-        case .loaded(let loaded):
-            hadContent = true
-            currentRepos = loaded.repos
-        default:
-            hadContent = false
-            currentRepos = []
-        }
-
-        if !hadContent {
-            await setState(.loading)
+        // Só mostra skeleton/full loading se ainda não houver conteúdo
+        if !hasContent {
+            setPhase(.loadingInitial)
         }
 
         do {
-            let fresh = try await useCases.refresh.execute()
-            await setState(.loaded(.init(repos: fresh, isLoadingMore: false)))
+            let page = try await useCases.refresh.execute()
+            state = RepoListViewState(
+                repos: page.repos,
+                phase: .idle,
+                hasMore: page.hasMore
+            )
         } catch {
-            if hadContent {
-                // Mantém conteúdo existente (não destrói UX)
-                await setState(.loaded(.init(repos: currentRepos, isLoadingMore: false)))
+            // Se já há conteúdo, mantém e só garante idle
+            if hasContent {
+                setPhase(.idle)
             } else {
-                await setState(.failed(message: error.localizedDescription))
+                // Sem enum de error/empty neste modelo: fica idle com repos vazios
+                // (A tua View pode mostrar Empty State quando repos.isEmpty && phase != loadingInitial)
+                state = RepoListViewState(repos: [], phase: .idle, hasMore: true)
             }
         }
     }
 
     func loadMoreIfNeeded(currentItem item: Repo?) {
         guard let item else { return }
+        guard state.phase == .idle else { return }
+        guard state.hasMore else { return }
+        guard !state.repos.isEmpty else { return }
 
         let repos = state.repos
-        guard !repos.isEmpty else { return }
+        let thresholdIndex =
+            repos.index(repos.endIndex, offsetBy: -3, limitedBy: repos.startIndex) ?? repos.startIndex
 
-        let thresholdIndex = repos.index(repos.endIndex, offsetBy: -3, limitedBy: repos.startIndex) ?? repos.startIndex
         guard repos.firstIndex(where: { $0.id == item.id }) == thresholdIndex else { return }
 
-        Task { await loadNextPageKeepingContent() }
+        Task { await loadNextPage() }
     }
 
     // MARK: - Private
 
-    private func loadCachedThenRefreshIfNeeded() async {
-        // 1) Cache-first (não bloquear UI)
+    private func loadCachedThenRefresh() async {
+        // 1) Cache-first (do not block UI)
         do {
             let cached = try await useCases.getCached.execute()
             if !cached.isEmpty {
-                await setState(.loaded(.init(repos: cached, isLoadingMore: false)))
+                state = RepoListViewState(repos: cached, phase: .idle, hasMore: true)
             } else {
-                await setState(.loading)
+                setPhase(.loadingInitial)
             }
         } catch {
-            await setState(.loading)
+            setPhase(.loadingInitial)
         }
 
-        // 2) Refresh sempre ao abrir
+        // 2) Always refresh on open
         await refresh()
     }
 
-    private func loadNextPageKeepingContent() async {
-        // Só carrega mais se já estivermos com conteúdo
-        guard case .loaded(var loaded) = state else { return }
-        guard loaded.isLoadingMore == false else { return }
+    private func loadNextPage() async {
+        guard state.phase == .idle else { return }
+        guard state.hasMore else { return }
 
-        loaded.isLoadingMore = true
-        await setState(.loaded(loaded))
+        let previous = state.repos
+        state = RepoListViewState(repos: previous, phase: .loadingMore, hasMore: state.hasMore)
 
         do {
-            let updated = try await useCases.loadNext.execute()
-            await setState(.loaded(.init(repos: updated, isLoadingMore: false)))
+            let page = try await useCases.loadNext.execute()
+
+            // Seatbelt: never allow the list to shrink
+            let stableRepos = page.repos.count >= previous.count ? page.repos : previous
+
+            state = RepoListViewState(
+                repos: stableRepos,
+                phase: .idle,
+                hasMore: page.hasMore
+            )
         } catch {
-            // Volta para loaded sem loadingMore e mantém lista
-            await setState(.loaded(.init(repos: loaded.repos, isLoadingMore: false)))
+            // Keep content, stop footer loading
+            state = RepoListViewState(repos: previous, phase: .idle, hasMore: state.hasMore)
         }
     }
 
-    private func setState(_ newState: RepoListViewState) async {
-        guard state != newState else { return }
-        state = newState
+    private func setPhase(_ phase: Phase) {
+        state = RepoListViewState(repos: state.repos, phase: phase, hasMore: state.hasMore)
     }
 }

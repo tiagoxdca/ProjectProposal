@@ -8,14 +8,20 @@
 import SwiftUI
 
 struct RepoListView: View {
+    
     @State private var selectedRepo: Repo?
     @State private var showOpenDialog = false
-
+    @State private var viewModel: RepoListViewModel
+    
     @Environment(\.openURL) private var openURL
-
-    let viewModel: RepoListViewModel
+    
     let router: AppRouter
-
+    
+    init(viewModel: RepoListViewModel, router: AppRouter) {
+        _viewModel = State(initialValue: viewModel)
+        self.router = router
+    }
+    
     var body: some View {
         RepoListScreen(
             state: viewModel.state,
@@ -30,7 +36,7 @@ struct RepoListView: View {
             }
         )
         .navigationTitle("Apple Repos")
-        .task { viewModel.onAppear() }
+        .task { await viewModel.onAppear() }
         .refreshable { await viewModel.refresh() }
         .confirmationDialog("Open in browser", isPresented: $showOpenDialog, titleVisibility: .visible) {
             if let repo = selectedRepo {
@@ -50,17 +56,17 @@ private struct RepoListScreen: View {
     let onLoadMoreIfNeeded: (Repo) -> Void
     let onTap: (Repo) -> Void
     let onLongPress: (Repo) -> Void
-
+    
     var body: some View {
         switch state {
         case .idle, .loading:
             RepoListLoadingView()
-
+            
         case .failed(let message):
             RepoListErrorView(message: message) {
                 Task { await onRefresh() }
             }
-
+            
         case .loaded(let loaded):
             if loaded.repos.isEmpty {
                 RepoListEmptyView {
@@ -88,7 +94,7 @@ private struct RepoListLoadingView: View {
 private struct RepoListErrorView: View {
     let message: String
     let onRetry: () -> Void
-
+    
     var body: some View {
         VStack(spacing: 12) {
             Text("Something went wrong").font(.headline)
@@ -110,7 +116,7 @@ private struct RepoListContentView: View {
     let onLoadMoreIfNeeded: (Repo) -> Void
     let onTap: (Repo) -> Void
     let onLongPress: (Repo) -> Void
-
+    
     var body: some View {
         ScrollView {
             LazyVStack(spacing: 10) {
@@ -121,7 +127,7 @@ private struct RepoListContentView: View {
                         .onLongPressGesture { onLongPress(repo) }
                         .padding(.horizontal, 12)
                 }
-
+                
                 if showFooterLoading {
                     ProgressView().padding()
                 }

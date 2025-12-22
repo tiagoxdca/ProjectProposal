@@ -19,8 +19,8 @@ final class RepoListViewModel {
         self.useCases = useCases
     }
 
-    func onAppear() {
-        Task { await loadCachedThenRefreshIfNeeded() }
+    func onAppear() async {
+        await loadCachedThenRefreshIfNeeded()
     }
 
     func refresh() async {

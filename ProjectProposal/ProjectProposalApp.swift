@@ -17,6 +17,12 @@ struct ProjectProposalApp: App {
         WindowGroup {
             NavigationStack(path: $router.path) {
                 root.factory.makeRepoListView(router: router)
+                    .navigationDestination(for: AppRoute.self) { route in
+                        switch route {
+                        case .repoDetails(let repo):
+                            RepoDetailsView(repo: repo)
+                        }
+                    }
             }
         }
         .modelContainer(root.container)

@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol GetCachedReposUseCase: Sendable {
+public protocol GetCachedReposUseCase {
     func execute() async throws -> [Repo]
 }
 

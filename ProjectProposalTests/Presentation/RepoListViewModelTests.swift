@@ -83,10 +83,10 @@ struct RepoListViewModelTests {
             sut.state.repos.map(\.id) == [1, 2] && sut.state.phase == .idle
         }
     }
-
+    
     @Test
     @MainActor
-    func loadMoreIfNeeded_setsPhaseLoadingMore_thenIdle_andKeepsContent() async throws {
+    func loadNextPageIfPossible_setsPhaseLoadingMore_thenIdle_andKeepsContent() async throws {
         let state = RepoListUseCasesFakeState()
 
         let repos = [
@@ -102,8 +102,10 @@ struct RepoListViewModelTests {
         await state.setRefresh(.success(RepoPage(repos: repos, hasMore: true)), delayNanos: 0)
 
         // Slow next page so we can observe phase = .loadingMore
-        await state.setNext(.success(RepoPage(repos: afterNext, hasMore: true)),
-                            delayNanos: 200_000_000)
+        await state.setNext(
+            .success(RepoPage(repos: afterNext, hasMore: true)),
+            delayNanos: 200_000_000
+        )
 
         let sut = RepoListViewModel(useCases: makeRepoListUseCasesFake(state: state))
 
@@ -114,10 +116,8 @@ struct RepoListViewModelTests {
             sut.state.repos.count == 5 && sut.state.phase == .idle
         }
 
-        // Threshold item is endIndex - 3 (same logic as VM)
-        let thresholdItem = sut.state.repos[sut.state.repos.count - 3] // id = 3
-
-        sut.loadMoreIfNeeded(currentItem: thresholdItem)
+        // ✅ New trigger (async) - replaces loadMoreIfNeeded(currentItem:)
+        Task { await sut.loadNextPageIfPossible() }
 
         // Observe loadingMore phase (while keeping content)
         await eventually {
@@ -126,7 +126,7 @@ struct RepoListViewModelTests {
 
         // Then observe it becomes idle and list is updated
         await eventually {
-            sut.state.phase == .idle && sut.state.repos.map(\.id) == [1,2,3,4,5,6]
+            sut.state.phase == .idle && sut.state.repos.map(\.id) == [1, 2, 3, 4, 5, 6]
         }
 
         let calls = await state.getCalls()

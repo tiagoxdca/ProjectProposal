@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct RepoListUseCases: Sendable {
+struct RepoListUseCases {
     let getCached: GetCachedReposUseCase
     let refresh: RefreshReposUseCase
     let loadNext: LoadNextReposPageUseCase

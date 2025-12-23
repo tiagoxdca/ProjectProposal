@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol RefreshReposUseCase: Sendable {
+public protocol RefreshReposUseCase {
     func execute() async throws -> RepoPage
 }
 

@@ -14,35 +14,32 @@ struct RepoListScreen: View {
     let onTap: (Repo) -> Void
     let onLongPress: (Repo) -> Void
     let onDismissError: () -> Void
-
+    
     @ViewBuilder var body: some View {
-        Group {
-            if state.repos.isEmpty && state.phase == .loadingInitial {
-                RepoListLoadingView()
-
-            } else if state.repos.isEmpty, let message = state.errorMessage {
-                RepoListErrorView(
-                    message: message,
-                    onRetry: onRefreshTapped
-                )
-
-            } else if state.repos.isEmpty {
-                RepoListEmptyView {
-                    onRefreshTapped()
-                }
-
-            } else {
-                RepoListContentView(
-                    repos: state.repos,
-                    showFooterLoading: state.phase == .loadingMore && state.hasMore,
-                    hasMore: state.hasMore,
-                    errorMessage: state.errorMessage,
-                    onLoadNextPageIfPossible: { @MainActor in await onLoadNextPageIfPossible() },
-                    onTap: onTap,
-                    onLongPress: onLongPress,
-                    onDismissError: onDismissError
-                )
-            }
+        switch state.uiState {
+            
+        case .loadingInitial:
+            RepoListLoadingView()
+            
+        case .error(let message):
+            RepoListErrorView(message: message, onRetry: onRefreshTapped)
+            
+        case .empty:
+            RepoListEmptyView { onRefreshTapped() }
+            
+        case .content:
+            RepoListContentView(
+                repos: state.repos,
+                showFooterLoading: state.phase == .loadingMore && state.hasMore,
+                hasMore: state.hasMore,
+                errorMessage: state.errorMessage,
+                onLoadNextPageIfPossible: { @MainActor in
+                    await onLoadNextPageIfPossible()
+                },
+                onTap: onTap,
+                onLongPress: onLongPress,
+                onDismissError: onDismissError
+            )
         }
     }
 }
@@ -68,7 +65,7 @@ struct RepoListScreen: View {
             ownerURL: URL(string: "https://github.com/apple")!
         )
     ]
-
+    
     return RepoListScreen(
         state: RepoListViewState(repos: samples, phase: .idle, hasMore: false, errorMessage: nil),
         onRefreshTapped: { @MainActor in },

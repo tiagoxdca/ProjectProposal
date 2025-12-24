@@ -27,3 +27,21 @@ enum Phase: Equatable {
     case loadingInitial
     case loadingMore
 }
+
+extension RepoListViewState {
+    var uiState: RepoListUIState {
+        if repos.isEmpty && phase == .loadingInitial {
+            return .loadingInitial
+        }
+
+        if repos.isEmpty, let message = errorMessage {
+            return .error(message: message)
+        }
+
+        if repos.isEmpty {
+            return .empty
+        }
+
+        return .content
+    }
+}

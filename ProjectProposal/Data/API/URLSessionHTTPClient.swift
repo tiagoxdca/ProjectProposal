@@ -20,8 +20,21 @@ public final class URLSessionHTTPClient: HTTPClient {
 
     public func perform(_ request: URLRequest) async throws -> (Data, HTTPURLResponse) {
         let (data, response) = try await session.data(for: request)
+
         guard let http = response as? HTTPURLResponse else {
             throw HTTPClientError.nonHTTPResponse
+        }
+
+        if http.statusCode == 304 {
+            let cache = session.configuration.urlCache ?? URLCache.shared
+
+            if let cached = cache.cachedResponse(for: request),
+               let cachedHTTP = cached.response as? HTTPURLResponse {
+                return (cached.data, cachedHTTP)
+            } else {
+                // 304 sem cache => erro real
+                throw HTTPClientError.nonHTTPResponse
+            }
         }
         return (data, http)
     }

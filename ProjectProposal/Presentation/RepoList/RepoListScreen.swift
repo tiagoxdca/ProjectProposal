@@ -9,7 +9,7 @@ import SwiftUI
 
 struct RepoListScreen: View {
     let state: RepoListViewState
-    let onRefresh: @MainActor @Sendable () async -> Void
+    let onRefreshTapped: @MainActor @Sendable () -> Void
     let onLoadNextPageIfPossible: @MainActor @Sendable () async -> Void
     let onTap: (Repo) -> Void
     let onLongPress: (Repo) -> Void
@@ -23,12 +23,12 @@ struct RepoListScreen: View {
             } else if state.repos.isEmpty, let message = state.errorMessage {
                 RepoListErrorView(
                     message: message,
-                    onRetry: { Task { await onRefresh() } }
+                    onRetry: onRefreshTapped
                 )
 
             } else if state.repos.isEmpty {
                 RepoListEmptyView {
-                    Task { await onRefresh() }
+                    onRefreshTapped()
                 }
 
             } else {
@@ -71,7 +71,7 @@ struct RepoListScreen: View {
 
     return RepoListScreen(
         state: RepoListViewState(repos: samples, phase: .idle, hasMore: false, errorMessage: nil),
-        onRefresh: { @MainActor in },
+        onRefreshTapped: { @MainActor in },
         onLoadNextPageIfPossible: { @MainActor in },
         onTap: { _ in },
         onLongPress: { _ in },

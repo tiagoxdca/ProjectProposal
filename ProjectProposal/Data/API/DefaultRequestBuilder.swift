@@ -30,6 +30,7 @@ public struct DefaultRequestBuilder: RequestBuilding {
         }
 
         var request = URLRequest(url: url)
+        request.cachePolicy = .useProtocolCachePolicy
         request.httpMethod = endpoint.method.rawValue
         request.httpBody = endpoint.body
 

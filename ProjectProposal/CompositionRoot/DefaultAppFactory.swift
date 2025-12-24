@@ -18,7 +18,17 @@ final class DefaultAppFactory: AppFactory {
     @MainActor
     func makeRepoListView(router: AppRouter) -> RepoListView {
         // HTTP stack
-        let httpClient = URLSessionHTTPClient()
+        let config = URLSessionConfiguration.default
+        config.requestCachePolicy = .useProtocolCachePolicy
+        config.urlCache = URLCache(
+            memoryCapacity: 50 * 1024 * 1024,
+            diskCapacity: 200 * 1024 * 1024,
+            diskPath: "http-cache"
+        )
+
+        let session = URLSession(configuration: config)
+        let httpClient = URLSessionHTTPClient(session: session)
+
 
         let requestBuilder = DefaultRequestBuilder(defaultHeaders: [
             "Accept": "application/vnd.github+json"

@@ -123,6 +123,19 @@ final class RepoListViewModel {
                 RepoListViewState(repos: stableRepos, phase: .idle, hasMore: page.hasMore, errorMessage: nil)
             }
         } catch {
+            
+            if Task.isCancelled || (error as? URLError)?.code == .cancelled {
+                updateState { current in
+                    RepoListViewState(
+                        repos: previous,
+                        phase: .idle,
+                        hasMore: current.hasMore,
+                        errorMessage: current.errorMessage
+                    )
+                }
+                return
+            }
+            
             // Keep content, stop footer loading
             updateState { current in
                 RepoListViewState(repos: previous, phase: .idle, hasMore: current.hasMore, errorMessage: "Couldn’t load more.")

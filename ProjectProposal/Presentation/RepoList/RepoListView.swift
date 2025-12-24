@@ -17,8 +17,8 @@ struct RepoListView: View {
     var body: some View {
         RepoListScreen(
             state: viewModel.state,
-            onRefresh: { @MainActor in
-                await viewModel.refresh()
+            onRefreshTapped: { @MainActor in
+                Task { await viewModel.refresh() }
             },
             onLoadNextPageIfPossible: { @MainActor in
                 await viewModel.loadNextPageIfPossible()

@@ -31,6 +31,11 @@ actor RepoCacheStoreInMemory: RepoCacheStore {
             storage[repo.id] = repo
         }
     }
+    
+    func replaceAll(with repos: [Repo]) async throws {
+        try await deleteAll()
+        try await upsert(repos)
+    }
 
     func deleteAll() async throws {
         deleteAllCalls += 1

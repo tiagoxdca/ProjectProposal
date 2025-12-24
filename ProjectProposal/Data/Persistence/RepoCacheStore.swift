@@ -10,5 +10,5 @@ import Foundation
 public protocol RepoCacheStore: Sendable {
     func fetchAll() async throws -> [Repo]
     func upsert(_ repos: [Repo]) async throws
-    func deleteAll() async throws
+    func replaceAll(with repos: [Repo]) async throws
 }

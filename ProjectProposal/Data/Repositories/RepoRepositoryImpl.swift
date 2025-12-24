@@ -56,7 +56,7 @@ public final actor RepoRepositoryImpl: RepoRepository {
 
         let repos = RepoMapper.map(dtos)
 
-        try await cache.upsert(repos)
+        try await cache.replaceAll(with: repos)
 
         // Replace in-memory list (stable order = API order)
         accumulated = repos

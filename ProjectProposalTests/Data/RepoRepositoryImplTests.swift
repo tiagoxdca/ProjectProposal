@@ -94,67 +94,52 @@ struct RepoRepositoryImplTests {
     }
     
     @Test
-    func refresh_doesNotClearCache_toAvoidEmptyStateFlicker() async throws {
+    func refresh_replacesCacheAtomically_andPersistsNewRepos() async throws {
         let service = GitHubRepoServiceStub()
         let cache = RepoCacheStoreInMemory()
-        
-        // Seed existing cache
-        await cache.seed([makeRepo(id: 999)])
-        
+
+        // Seed cache with some existing data
+        try await cache.upsert([makeRepo(id: 99)])
+
+        // Remote returns a new page with a single repo
         await service.setPage(1, repos: [
             makeDTO(id: 1, name: "A")
-        ], hasNext: false)
-        
+        ], hasNext: true)
+
         let sut = RepoRepositoryImpl(service: service, cache: cache, user: "apple", perPage: 10)
-        
+
         _ = try await sut.refresh()
-        
-        // The important signal: deleteAll should not be called (per our chosen policy)
-        #expect(await cache.deleteAllCalls == 0)
-        
+
+        // refresh now uses replaceAll -> should clear + upsert
+        #expect(await cache.deleteAllCalls == 1)
+
         let cached = try await sut.cachedRepos()
-        // Should at least contain the new repo; depending on your policy it may also keep older ones.
-        #expect(cached.contains(where: { $0.id == 1 }))
+        #expect(cached.map(\.id) == [1])
     }
-    
+
     @Test
-    func refresh_replacesReturnedRepos_evenWhenCacheHasOldData_andDoesNotClearCache() async throws {
+    func refresh_replacesReturnedRepos_evenWhenCacheHasOldData() async throws {
         let service = GitHubRepoServiceStub()
         let cache = RepoCacheStoreInMemory()
 
-        // Existing cached data (simulates UI currently displaying old content)
-        await cache.seed([makeRepo(id: 999)])
+        // Cache has old/stale data
+        try await cache.upsert([makeRepo(id: 1), makeRepo(id: 2)])
 
-        // Refresh returns a completely new dataset
-        await service.setPage(
-            1,
-            repos: [
-                makeDTO(id: 1, name: "A"),
-                makeDTO(id: 2, name: "B")
-            ],
-            hasNext: false
-        )
+        // Remote returns a different dataset
+        await service.setPage(1, repos: [
+            makeDTO(id: 10, name: "X"),
+            makeDTO(id: 11, name: "Y")
+        ], hasNext: true)
 
-        let sut = RepoRepositoryImpl(
-            service: service,
-            cache: cache,
-            user: "apple",
-            perPage: 10
-        )
+        let sut = RepoRepositoryImpl(service: service, cache: cache, user: "apple", perPage: 10)
 
-        let page = try await sut.refresh()
+        let refreshed = try await sut.refresh()
 
-        // The returned page must represent the new source of truth
-        #expect(page.repos.map(\.id) == [1, 2])
-        #expect(!page.repos.contains { $0.id == 999 })
+        #expect(refreshed.repos.map(\.id) == [10, 11])
+        #expect(await cache.deleteAllCalls == 1)
 
-        // Important signal: refresh must not clear the cache to avoid empty-state flicker
-        #expect(await cache.deleteAllCalls == 0)
-
-        // New repos should be persisted in cache
         let cached = try await sut.cachedRepos()
-        #expect(cached.contains { $0.id == 1 })
-        #expect(cached.contains { $0.id == 2 })
+        #expect(cached.map(\.id) == [10, 11])
     }
 }
 

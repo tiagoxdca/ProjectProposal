@@ -21,7 +21,10 @@ public final class SwiftDataRepoCacheStore: RepoCacheStore {
     @MainActor
     public func fetchAll() throws -> [Repo] {
         let descriptor = FetchDescriptor<CachedRepo>(
-            sortBy: [SortDescriptor(\.id, order: .forward)]
+            sortBy: [
+                SortDescriptor(\.updatedAt, order: .reverse),
+                SortDescriptor(\.id, order: .forward)
+            ]
         )
         let cached = try context.fetch(descriptor)
         return cached.compactMap(CachedRepoMapper.toDomain)

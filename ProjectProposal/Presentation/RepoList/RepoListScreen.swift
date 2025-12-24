@@ -28,7 +28,7 @@ struct RepoListScreen: View {
             RepoListEmptyView { onRefreshTapped() }
             
         case .content:
-            RepoListContentView(
+            RepoListLoadedScreen(
                 repos: state.repos,
                 showFooterLoading: state.phase == .loadingMore && state.hasMore,
                 hasMore: state.hasMore,

@@ -102,10 +102,8 @@ struct RepoListViewModelTests {
         await state.setRefresh(.success(RepoPage(repos: repos, hasMore: true)), delayNanos: 0)
 
         // Slow next page so we can observe phase = .loadingMore
-        await state.setNext(
-            .success(RepoPage(repos: afterNext, hasMore: true)),
-            delayNanos: 200_000_000
-        )
+        await state.setNext(.success(RepoPage(repos: afterNext, hasMore: true)),
+                            delayNanos: 200_000_000)
 
         let sut = RepoListViewModel(useCases: makeRepoListUseCasesFake(state: state))
 
@@ -116,8 +114,8 @@ struct RepoListViewModelTests {
             sut.state.repos.count == 5 && sut.state.phase == .idle
         }
 
-        // ✅ New trigger (async) - replaces loadMoreIfNeeded(currentItem:)
-        Task { await sut.loadNextPageIfPossible() }
+        // Start pagination asynchronously so we can observe intermediate state changes
+        let nextTask = Task { await sut.loadNextPageIfPossible() }
 
         // Observe loadingMore phase (while keeping content)
         await eventually {
@@ -129,9 +127,13 @@ struct RepoListViewModelTests {
             sut.state.phase == .idle && sut.state.repos.map(\.id) == [1, 2, 3, 4, 5, 6]
         }
 
+        // Ensure the pagination task completes
+        _ = await nextTask.value
+
         let calls = await state.getCalls()
         #expect(calls.next == 1)
     }
+
 }
 
 // MARK: - Helpers

@@ -26,121 +26,57 @@ final class RepoListViewModel {
         await loadCachedThenRefresh()
     }
     
+    func loadNextPageIfPossible() async {
+        guard canLoadNextPage else { return }
+        await loadNextPage()
+    }
+    
     func refresh() async {
-        let hasContent = !state.repos.isEmpty
-        
-        // Só mostra skeleton/full loading se ainda não houver conteúdo
-        if !hasContent {
-            setPhase(.loadingInitial, error: nil)
+        let hadContent = !state.repos.isEmpty
+        if !hadContent {
+            setState(phase: .loadingInitial, errorMessage: .some(nil))
         }
         
         do {
             let page = try await useCases.refresh.execute()
-            
-            updateState { _ in
-                RepoListViewState(repos: page.repos,
-                                  phase: .idle,
-                                  hasMore: page.hasMore,
-                                  errorMessage: nil)
-            }
+            setState(repos: page.repos, phase: .idle, hasMore: page.hasMore, errorMessage: .some(nil))
         } catch {
-            // If content already exists, keep it and only ensure idle state.
-            if hasContent {
-                setPhase(.idle, error: "Couldn’t refresh. Showing cached results.")
-            } else {
-                // This model has no error/empty enum: it remains idle with empty repos
-                // (Your View can display an Empty State when repos.isEmpty && phase != loadingInitial)
-                updateState { _ in
-                    RepoListViewState(
-                        repos: [],
-                        phase: .idle,
-                        hasMore: true,
-                        errorMessage: "Couldn’t load repositories. Check your connection and try again."
-                    )
-                }
-            }
+            handleRefreshError(error, hadContent: hadContent)
         }
-    }
-    
-    @MainActor
-    func loadNextPageIfPossible() async {
-        guard state.phase == .idle else { return }
-        guard state.hasMore else { return }
-        await loadNextPage()
     }
     
     func dismissError() {
-        updateState { current in
-            RepoListViewState(
-                repos: current.repos,
-                phase: current.phase,
-                hasMore: current.hasMore,
-                errorMessage: nil
-            )
-        }
+        setState(errorMessage: .some(nil))
     }
     
     // MARK: - Private
     
-    private func loadCachedThenRefresh() async {
-        // 1) Cache-first (do not block UI)
-        do {
-            let cached = try await useCases.getCached.execute()
-            if !cached.isEmpty {
-                
-                updateState { _ in
-                    RepoListViewState(repos: cached, phase: .idle, hasMore: true, errorMessage: nil)
-                }
-            } else {
-                setPhase(.loadingInitial, error: nil)
-            }
-        } catch {
-            setPhase(.loadingInitial, error: nil)
-        }
-        
-        // 2) Always refresh on open
-        await refresh()
+    private var canLoadNextPage: Bool {
+        state.phase == .idle && state.hasMore
     }
     
     private func loadNextPage() async {
-        guard state.phase == .idle else { return }
-        guard state.hasMore else { return }
-        
         let previous = state.repos
-        
-        updateState { current in
-            RepoListViewState(repos: previous, phase: .loadingMore, hasMore: current.hasMore, errorMessage: nil)
-        }
+        setState(phase: .loadingMore, errorMessage: .some(nil))
         
         do {
             let page = try await useCases.loadNext.execute()
-            
-            // Seatbelt: never allow the list to shrink
-            let stableRepos = page.repos.count >= previous.count ? page.repos : previous
-            
-            
-            updateState { _ in
-                RepoListViewState(repos: stableRepos, phase: .idle, hasMore: page.hasMore, errorMessage: nil)
-            }
+            let stable = page.repos.count >= previous.count ? page.repos : previous // Defensive: avoid UI regression if repository returns a shorter list
+            setState(repos: stable, phase: .idle, hasMore: page.hasMore, errorMessage: .some(nil))
         } catch {
-            
-            if Task.isCancelled || (error as? URLError)?.code == .cancelled {
-                updateState { current in
-                    RepoListViewState(
-                        repos: previous,
-                        phase: .idle,
-                        hasMore: current.hasMore,
-                        errorMessage: current.errorMessage
-                    )
-                }
-                return
-            }
-            
-            // Keep content, stop footer loading
-            updateState { current in
-                RepoListViewState(repos: previous, phase: .idle, hasMore: current.hasMore, errorMessage: "Couldn’t load more.")
-            }
+            await handlePaginationError(error, previous: previous)
         }
+    }
+    
+    private func loadCachedThenRefresh() async {
+        let cached = (try? await useCases.getCached.execute()) ?? []
+        if !cached.isEmpty {
+            setState(repos: cached, phase: .idle, hasMore: true, errorMessage: .some(nil))
+        } else {
+            setState(phase: .loadingInitial, errorMessage: .some(nil))
+        }
+        
+        await refresh()
     }
     
     private func updateState(_ transform: (RepoListViewState) -> RepoListViewState) {
@@ -149,14 +85,36 @@ final class RepoListViewModel {
         state = newState
     }
     
-    private func setPhase(_ phase: Phase, error: String?) {
+    private func setState(repos: [Repo]? = nil,
+                          phase: Phase? = nil,
+                          hasMore: Bool? = nil,
+                          errorMessage: String?? = nil) {
         updateState { current in
-            RepoListViewState(
-                repos: current.repos,
-                phase: phase,
-                hasMore: current.hasMore,
-                errorMessage: error
-            )
+            RepoListViewState(repos: repos ?? current.repos,
+                phase: phase ?? current.phase,
+                hasMore: hasMore ?? current.hasMore,
+                errorMessage: errorMessage ?? current.errorMessage)
         }
+    }
+    
+    private func handleRefreshError(_ error: Error, hadContent: Bool) {
+        if hadContent {
+            setState(phase: .idle, errorMessage: .some("Couldn’t refresh. Showing cached results."))
+        } else {
+            setState(repos: [],
+                     phase: .idle,
+                     hasMore: true,
+                     errorMessage: .some("Couldn’t load repositories. Check your connection and try again."))
+        }
+    }
+    
+    private func handlePaginationError(_ error: Error, previous: [Repo]) async {
+        if Task.isCancelled || (error as? URLError)?.code == .cancelled {
+            // cancellation is not an error
+            setState(repos: previous, phase: .idle)
+            return
+        }
+        
+        setState(repos: previous, phase: .idle, errorMessage: .some("Couldn’t load more."))
     }
 }

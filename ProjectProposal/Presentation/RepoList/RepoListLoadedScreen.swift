@@ -20,9 +20,7 @@ struct RepoListLoadedScreen: View {
 
     var body: some View {
         ScrollView {
-            LazyVStack(spacing: 10) {
-                RepoListErrorBanner(message: errorMessage, onDismiss: onDismissError)
-
+            LazyVStack(spacing: 16) {
                 RepoListRows(
                     repos: repos,
                     onTap: onTap,
@@ -32,6 +30,8 @@ struct RepoListLoadedScreen: View {
                 if showFooterLoading {
                     ProgressView().padding()
                 }
+                
+                RepoListErrorBanner(message: errorMessage, onDismiss: onDismissError)
 
                 if hasMore {
                     Color.clear
@@ -41,9 +41,10 @@ struct RepoListLoadedScreen: View {
                         }
                 }
             }
-            .padding(.vertical, 12)
+            .padding(.vertical, 16)
             .animation(.easeInOut, value: errorMessage)
         }
-        .background(Color(UIColor.systemGroupedBackground))
+        .background(Color(uiColor: .systemBackground))
+
     }
 }

@@ -14,9 +14,13 @@ struct RepoListErrorBanner: View {
     var body: some View {
         if let message {
             HStack(alignment: .firstTextBaseline, spacing: 10) {
-                Label(message, systemImage: "exclamationmark.triangle.fill")
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.red)
+
+                Text(message)
                     .font(.footnote)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.primary)
 
                 Spacer(minLength: 8)
 
@@ -30,12 +34,18 @@ struct RepoListErrorBanner: View {
             }
             .padding(12)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(UIColor.secondarySystemGroupedBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .padding(.horizontal, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color.red.opacity(0.08))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(Color.red.opacity(0.18), lineWidth: 0.5)
+            )
+            .padding(.horizontal, 16)
             .contentShape(Rectangle())
             .onTapGesture { onDismiss() }
-            .transition(.move(edge: .top).combined(with: .opacity))
+            .transition(.opacity.combined(with: .move(edge: .bottom)))
         }
     }
 }
